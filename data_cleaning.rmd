@@ -1,0 +1,28 @@
+```{r}
+library(countrycode)
+library(tidyverse)
+futbol = read_csv("./2021-2022 Football Player Stats.csv")
+extra_match = c("Africa", "Africa", "Europe", "Africa", "Africa", "Americas", "Americas", "Europe", "Africa", "Europe", "Europe", "Africa", "Africa", "Europe", "Europe", "Americas", "Africa", "Americas", "Europe", "Africa", "Europe", "Europe", "Americas", "Asia", "Europe", "Africa", "Europe", "Europe", "Africa", "Americas", "Europe", "Africa", "Africa")
+names(extra_match) = c("ALG", "ANG", "BUL", "CGO", "CHA", "CHI", "CRC", "CRO", "CTA", "DEN", "ENG", "EQG", "GAM", "GER", "GRE", "GRN", "GUI", "HON", "KVX", "MAD", "NED", "NIR", "PAR", "PHI", "POR", "RSA", "SCO", "SUI", "TOG", "URU", "WAL", "ZAM", "ZIM")
+futbol$Continent = countrycode(futbol$Nation, "iso3c", "continent", custom_match = extra_match)
+simpPos = function (x) {
+  if (x == "MFFW") {
+    return ("MF")
+  } else if (x == "FWMF") {
+    return ("FW")
+  } else if (x == "DFMF") {
+    return ("DF")
+  } else if (x == "FWDF") {
+    return ("FW")
+  } else if (x == "MFDF") {
+    return ("MF")
+  } else if (x == "DFFW") {
+    return ("DF")
+  } else if (x == "GKMF") {
+    return ("GK")
+  } else {
+    return (x)
+  }
+}
+futbol$Pos_simplified = sapply(futbol$Pos, FUN = simpPos)
+```
