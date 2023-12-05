@@ -1,0 +1,106 @@
+---
+output:
+  pdf_document:
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: show
+urlcolor: blue
+---
+
+```{r}
+library(countrycode)
+library(tidyverse)
+futbol = read.csv("~/2021-2022 Football Player Stats.csv", header = TRUE, sep = ";")
+extra_match = c("Africa", "Africa", "Europe", "Africa", "Africa", "Americas", "Americas", "Europe", "Africa", "Europe", "Europe", "Africa", "Africa", "Europe", "Europe", "Americas", "Africa", "Americas", "Europe", "Africa", "Europe", "Europe", "Americas", "Asia", "Europe", "Africa", "Europe", "Europe", "Africa", "Americas", "Europe", "Africa", "Africa")
+names(extra_match) = c("ALG", "ANG", "BUL", "CGO", "CHA", "CHI", "CRC", "CRO", "CTA", "DEN", "ENG", "EQG", "GAM", "GER", "GRE", "GRN", "GUI", "HON", "KVX", "MAD", "NED", "NIR", "PAR", "PHI", "POR", "RSA", "SCO", "SUI", "TOG", "URU", "WAL", "ZAM", "ZIM")
+futbol$Continent = countrycode(futbol$Nation, "iso3c", "continent", custom_match = extra_match)
+simpPos = function (x) {
+  if (x == "MFFW") {
+    return ("MF")
+  } else if (x == "FWMF") {
+    return ("FW")
+  } else if (x == "DFMF") {
+    return ("DF")
+  } else if (x == "FWDF") {
+    return ("FW")
+  } else if (x == "MFDF") {
+    return ("MF")
+  } else if (x == "DFFW") {
+    return ("DF")
+  } else if (x == "GKMF") {
+    return ("GK")
+  } else {
+    return (x)
+  }
+}
+futbol$Pos_simplified = sapply(futbol$Pos, FUN = simpPos)
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(futbol, aes(x = Pos_simplified, y = PasTotCmp., fill = Comp)) +
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Passing Accuracy vs. Player Position, by Soccer Leagues", x = "Player Position", y = "Pass Completion Percentage", fill = "League") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
+```
+
+**The scientific question of interest is: How does the passing accuracy vary among different player positions, and is there a noticeable difference between players from different leagues (Premier League, Ligue 1, Bundesliga, Serie A, and La Liga)? The box plot displays the distribution of passing completion percentages (`PasTotCmp.`) across different player positions, with the data color-coded by the league to show variations between leagues. The plot shows how passing forwards generally have the lowest passing completion percentages whereas defender accuracy seems the highest. There does not seem to be a significant difference between the leagues for the passing accuracy by position, as all boxplots overlap for a given position. This plot seems to be relatively informative as we are easily able to compare the range of differences in passing accuracy by position and league that can help answer the question; however, there are some limitations. There appears to be many outliers, especially with lower passing percentages, for all positions other than goal keeper.**
+
+
+```{r}
+model <- lm(PasTotCmp. ~ Pos_simplified * Comp, data = futbol)
+residuals=resid(model)
+qqnorm(residuals)         # Q-Q plot for normality
+qqline(residuals)         
+plot(fitted(model), residuals)   # Residuals vs. Fitted values plot for homogeneity, variances, linearity
+```
+
+```{r}
+model <- aov(PasTotCmp. ~ Pos_simplified * Comp, data = futbol)
+summary(model)
+```
+
+**The ANOVA results indicate highly significant differences in passing accuracy among different player positions (Pos_simplified), as evidenced by a large F-statistic of 94.623 (p-value < 2e-16). The factor "Comp" (representing soccer leagues) also significantly influences passing accuracy, with a substantial F-statistic of 11.827 (p-value 1.57e-09), suggesting variations in passing performance across leagues. Furthermore, there is a significant interaction effect between player position and league (Pos_simplified:Comp), denoted by an F-statistic of 2.754 (p-value 0.000999), indicating that the impact of player position on passing accuracy differs across leagues. sIn summary, the findings suggest that both player position and league affiliation significantly contribute to differences in passing accuracy, and the interaction between these factors should be considered for a comprehensive understanding of the observed variations.**
+
+
+
+```{r}
+scaled_data <- scale(futbol[, c("PasTotCmp", "PasTotDist", "PasTotPrgDist", "PasAss", "PasProg", "PasInt", "PasBlocks")])
+unique_positions <- unique(futbol$Pos_simplified)
+colors <- setNames(c("red", "blue", "green", "purple"), unique_positions)
+pca_result <- prcomp(scaled_data, scale. = TRUE)
+pca_scores <- as.data.frame(pca_result$x[, 1:2])
+
+shapes <- c(16, 17, 18, 19)
+shapes <- setNames(shapes,  unique(futbol$League))
+
+par(mfrow = c(1, 2))
+plot(pca_scores, col = adjustcolor(colors[futbol$Pos_simplified],  alpha = 0.4), 
+     pch=16,
+     main = "PCA Scatter Plot by Position",
+     xlab = "Principal Component 1", ylab = "Principal Component 2")
+
+legend("topright", legend =unique_positions, fill = unique(colors))
+
+
+unique_leagues <- unique(futbol$Comp)
+colors <- setNames(c("red", "blue", "green", "purple", "yellow"), unique_leagues)
+
+plot(pca_scores, col = adjustcolor(colors[futbol$Comp],  alpha = 0.4), 
+     pch=16,
+     main = "PCA Scatter Plot by League",
+     xlab = "Principal Component 1", ylab = "Principal Component 2")
+
+legend("topright", legend =unique_leagues, fill = unique(colors))
+```
+
+**Using 7 passing variables- `PasTotCmp`, `PasTotDist`, `PasTotPrgDist`, `PasAss`, `PasProg`, `PasInt`, and `PasBlocks`- PCA projected the data into the lower-dimensional space defined by the first two principal components. We can see that there does appear to be some grouping present for the plot by positions; however, there does not seem to be much of a difference for this projection by the league.**
+
+```{r}
+summary(pca_result)
+```
+
+**As shown above, the first two principle components explain 65.63% of the variability in the data.**
