@@ -1,13 +1,25 @@
 ---
-title: "Final Project - 2021-2022 Football Player Stats"
-author: "Anusha Bhat, Marcos Pi Marrero, Nandini Neralagi, Noelani Phillips"
+title: "Final Project Report: 2021-2022 European Leagues Player Stats"
+author: "Anusha Bhat, Nandini Neralagi, Noelani Phillips, Marcos Pi Marrero"
 output:
   pdf_document:
   html_document:
     toc: no
-    code_folding: show
 urlcolor: blue
 ---
+
+***
+
+# Dataset Description
+The dataset is sourced from the 2021-2022 European Leagues Player Stats and provides a comprehensive overview of 2,921 male soccer players across prominent leagues, including the Premier League, Ligue 1, Bundesliga, Serie A, and La Liga, during the 2021-2022 season. There are a total of 143 variables. These variables encompass player demographic information, match statistics, passing accuracy, offensive and defensive actions, as well as detailed metrics on aerial duels, tackles, dribbles, and other key aspects of individual and team performance in soccer. The dataset provides comprehensive insights for detailed analysis abd a holistic view of player performances.
+
+The research questions that we will be exploring are:
+
+1. How are player demographics related to leagues and positions?
+
+2. Offense: How does passing performance differ across player position and league, and what are predictors of goals?
+
+3. Defense: How do metrics related to defensive performance differ across player position?
 
 
 ```{r, include = FALSE}
@@ -41,24 +53,20 @@ futbol$Pos_simplified = sapply(futbol$Pos, FUN = simpPos)
 ```
 
 
+
 ***
 
 
 #  How are player demographics related to leagues and positions?
 
-1.  Your data must contain a mix of categorical and quantitative variables and be complex enough that you can create at least 8 interesting graphs (so datasets with only a few variables will not work).
-
-2.  You CANNOT use any of the datasets that were used in any previous assignments in this course or any other course you have taken.  You must use a dataset that everyone in your group has never worked with before.
-
-3.  Your dataset should have at least 200 usable observations after any pre-processing has been done.  Exceptions might be made to this rule, but a lot of the graphical techniques we will study produce rather uninteresting results on tiny datasets.
-
+[add]
 
 ***
 
 
-#  How do metrics related to offensive performance, including passing and goals, differ across player position and league? 
+#  Offense: How does passing performance differ across player position and league? 
 
-```{r}
+```{r, echo=FALSE}
 ggplot(futbol, aes(x = Pos_simplified, y = PasTotCmp., fill = Comp)) +
   geom_boxplot() + 
   theme_minimal() +
@@ -66,10 +74,12 @@ ggplot(futbol, aes(x = Pos_simplified, y = PasTotCmp., fill = Comp)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
 ```
 
-**The scientific question of interest is: How does the passing accuracy vary among different player positions, and is there a noticeable difference between players from different leagues (Premier League, Ligue 1, Bundesliga, Serie A, and La Liga)? The box plot displays the distribution of passing completion percentages (`PasTotCmp.`) across different player positions, with the data color-coded by the league to show variations between leagues. The plot shows how passing forwards generally have the lowest passing completion percentages whereas defender accuracy seems the highest. There does not seem to be a significant difference between the leagues for the passing accuracy by position, as all boxplots overlap for a given position. This plot seems to be relatively informative as we are easily able to compare the range of differences in passing accuracy by position and league that can help answer the question; however, there are some limitations. There appears to be many outliers, especially with lower passing percentages, for all positions other than goal keeper.**
+The box plot displays the distribution of passing completion percentages (`PasTotCmp%`) across different player positions, with the data color-coded by the league to show variations between leagues. The plot shows how passing completion percentages  seems the highest for defenders, whereas forwards seem to have lower passing completion percentages. This might be because of defenders often engage in more controlled passes, while forwards may attempt riskier passes for goal-scoring opportunities.
+
+The boxplots for different positions tend to overlap. Also, there does not seem to be a significant difference between the leagues for the passing accuracy by position, as all boxplots overlap for a given position. This plot seems to be relatively informative as we are easily able to compare the range of differences in passing accuracy by position and league that can help answer the question; however, there are some limitations. There appears to be many outliers, especially with lower passing percentages, for all positions other than goal keeper.
 
 
-```{r}
+```{r, include=FALSE}
 model <- lm(PasTotCmp. ~ Pos_simplified * Comp, data = futbol)
 residuals=resid(model)
 qqnorm(residuals)         # Q-Q plot for normality
@@ -77,16 +87,16 @@ qqline(residuals)
 plot(fitted(model), residuals)   # Residuals vs. Fitted values plot for homogeneity, variances, linearity
 ```
 
-```{r}
+
+```{r, echo=FALSE}
 model <- aov(PasTotCmp. ~ Pos_simplified * Comp, data = futbol)
 summary(model)
 ```
 
-**The ANOVA results indicate highly significant differences in passing accuracy among different player positions (Pos_simplified), as evidenced by a large F-statistic of 94.623 (p-value < 2e-16). The factor "Comp" (representing soccer leagues) also significantly influences passing accuracy, with a substantial F-statistic of 11.827 (p-value 1.57e-09), suggesting variations in passing performance across leagues. Furthermore, there is a significant interaction effect between player position and league (Pos_simplified:Comp), denoted by an F-statistic of 2.754 (p-value 0.000999), indicating that the impact of player position on passing accuracy differs across leagues. sIn summary, the findings suggest that both player position and league affiliation significantly contribute to differences in passing accuracy, and the interaction between these factors should be considered for a comprehensive understanding of the observed variations.**
+After checking the Q-Q plot and residuals vs. fitted plot, the data seem to reasonably meet the assumptions for an ANOVA test. The ANOVA results above indicate  significant differences in passing accuracy among different player positions (`Pos_simplified`), as indicated by the F-statistic of 94.623 (p-value < 2e-16), at the standard alpha level of 0.05. The factor `Comp` (representing soccer leagues) also significantly influences passing accuracy, with an F-statistic of 11.827 (p-value 1.57e-09), suggesting variations in passing performance across leagues. Furthermore, there is a significant interaction effect between player position and league (`Pos_simplified:Comp`), denoted by an F-statistic of 2.754 (p-value 0.000999), indicating that the impact of player position on passing accuracy differs across leagues. In summary, the findings suggest that both player position and league affiliation significantly contribute to differences in passing accuracy, and the interaction between these factors should be considered for a comprehensive understanding of the variations.
 
 
-
-```{r}
+```{r, echo=FALSE}
 scaled_data <- scale(futbol[, c("PasTotCmp", "PasTotDist", "PasTotPrgDist", "PasAss", "PasProg", "PasInt", "PasBlocks")])
 unique_positions <- unique(futbol$Pos_simplified)
 colors <- setNames(c("red", "blue", "green", "purple"), unique_positions)
@@ -116,23 +126,38 @@ plot(pca_scores, col = adjustcolor(colors[futbol$Comp],  alpha = 0.4),
 legend("topright", legend =unique_leagues, fill = unique(colors))
 ```
 
-**Using 7 passing variables- `PasTotCmp`, `PasTotDist`, `PasTotPrgDist`, `PasAss`, `PasProg`, `PasInt`, and `PasBlocks`- PCA projected the data into the lower-dimensional space defined by the first two principal components. We can see that there does appear to be some grouping present for the plot by positions; however, there does not seem to be much of a difference for this projection by the league.**
+Using 7 passing variables- `PasTotCmp`, `PasTotDist`, `PasTotPrgDist`, `PasAss`, `PasProg`, `PasInt`, and `PasBlocks`- PCA projected the data into the lower-dimensional space defined by the first two principal components. There appears to be some grouping by player positions, suggesting that the principal components may capture patterns related to passing performance across different positions. However, there appears to limited distinction by league in the projection, suggesting that the variability explained may not strongly differentiate passing styles between the considered leagues.
 
-```{r}
+
+```{r, echo=FALSE}
 summary(pca_result)
 ```
 
-**As shown above, the first two principle components explain 65.63% of the variability in the data.**
+As shown above, the first two principle components explain 65.63% of the variability in the data. This indicates majority of the original information is captured in these two components, suggesting an effective reduction in dimensionality while retaining a considerable amount of the variability present in the seven passing variables. 
+
+
+# Offense: What are predictors of goals?
+
+
+
+[add]
 
 
 ***
-#  How do metrics related to defensive performance differ across player position?
+#  Defense: How do metrics related to defensive performance differ across player position?
 
+[add]
 
 
 
 ***
 
+# Conclusion and Main Takeaways
+
+[add]
+
+
+***
 
 # Sources
 
